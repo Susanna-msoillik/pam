@@ -1,8 +1,4 @@
-String formatPrice(
-  double amount, {
-  String currency = 'MDL',
-  int decimals = 2,
-}) {
+String formatPrice(double amount, {String currency = 'MDL', int decimals = 2}) {
   return '${amount.toStringAsFixed(decimals)} $currency';
 }
 
