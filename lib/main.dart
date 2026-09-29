@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'screens/route_search.dart';
 import 'screens/route_details.dart';
 import 'screens/booking_form.dart';
+import 'screens/publish_route.dart';
 
 void main() {
   runApp(const CarPoolApp());
@@ -20,6 +21,9 @@ class CarPoolApp extends StatelessWidget {
       ),
       home: Builder(
         builder: (context) => RouteSearchPage(
+          onPublish: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const PublishRoutePage()),
+          ),
           onOpen: (route) => Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (context) => RouteDetailsPage(
