@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/car_route.dart';
+import 'auth.dart';
 import 'booking_form.dart';
 import 'my_trips.dart';
 import 'profile.dart';
@@ -46,7 +47,17 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           MyTripsPage(onOpen: _open),
-          const ProfilePage(),
+          ProfilePage(
+            onLogout: () => Navigator.of(context).pushReplacement(
+              MaterialPageRoute<void>(
+                builder: (context) => AuthPage(
+                  onLogin: () => Navigator.of(context).pushReplacement(
+                    MaterialPageRoute<void>(builder: (_) => const HomePage()),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: NavigationBar(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'screens/auth.dart';
 import 'screens/home.dart';
 
 void main() {
@@ -16,7 +17,13 @@ class CarPoolApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF156A87)),
       ),
-      home: const HomePage(),
+      home: Builder(
+        builder: (context) => AuthPage(
+          onLogin: () => Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(builder: (_) => const HomePage()),
+          ),
+        ),
+      ),
     );
   }
 }
