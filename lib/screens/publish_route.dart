@@ -75,8 +75,9 @@ class _PublishRoutePageState extends State<PublishRoutePage> {
             textCapitalization: TextCapitalization.words,
             decoration: const InputDecoration(labelText: 'Куда'),
             validator: (v) {
-              if (v == null || v.trim().isEmpty)
+              if (v == null || v.trim().isEmpty) {
                 return 'Введите город назначения';
+              }
               return v.trim().toLowerCase() == _from.text.trim().toLowerCase()
                   ? 'Города должны отличаться'
                   : null;

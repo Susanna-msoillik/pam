@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/car_route.dart';
 import '../data/mock_data.dart';
 import '../widgets/route_card.dart';
+import '../widgets/confirmation.dart';
 
 class MyTripsPage extends StatelessWidget {
   final ValueChanged<CarRoute>? onOpen;
@@ -34,7 +35,19 @@ class MyTripsPage extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () async {
+                        if (await confirmAction(
+                              context,
+                              'Отменить бронирование?',
+                            ) &&
+                            context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Бронирование отменено'),
+                            ),
+                          );
+                        }
+                      },
                       child: const Text('Отменить бронь'),
                     ),
                   ),

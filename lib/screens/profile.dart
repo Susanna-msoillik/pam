@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../widgets/confirmation.dart';
 
 import '../data/mock_data.dart';
 
@@ -35,7 +38,12 @@ class ProfilePage extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           OutlinedButton.icon(
-            onPressed: onLogout ?? () {},
+            onPressed: () async {
+              if (await confirmAction(context, 'Выйти из аккаунта?') &&
+                  context.mounted) {
+                context.go('/login');
+              }
+            },
             icon: const Icon(Icons.logout),
             label: const Text('Выйти'),
           ),
