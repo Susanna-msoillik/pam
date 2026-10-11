@@ -1,16 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-class AuthPage extends StatelessWidget {
-  final VoidCallback onLogin;
-  const AuthPage({super.key, required this.onLogin});
+class AuthPage extends StatefulWidget {
+  const AuthPage({super.key});
+  @override
+  State<AuthPage> createState() => _AuthPageState();
+}
+
+class _AuthPageState extends State<AuthPage> {
+  final _form = GlobalKey<FormState>();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  final _name = TextEditingController();
+  bool _register = false;
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    _name.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_form.currentState!.validate()) context.go('/routes');
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('CarPool')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 440),
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('CarPool')),
+    body: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 440),
+        child: Form(
+          key: _form,
           child: ListView(
             shrinkWrap: true,
             padding: const EdgeInsets.all(24),
@@ -22,30 +44,57 @@ class AuthPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Едем вместе',
+                _register ? 'Создать аккаунт' : 'Едем вместе',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 32),
-              const TextField(
+              if (_register) ...[
+                TextFormField(
+                  controller: _name,
+                  decoration: const InputDecoration(labelText: 'Имя'),
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Введите имя' : null,
+                ),
+                const SizedBox(height: 16),
+              ],
+              TextFormField(
+                controller: _email,
                 keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(labelText: 'E-mail'),
+                decoration: const InputDecoration(labelText: 'E-mail'),
+                validator: (v) =>
+                    RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+                        .hasMatch(v?.trim() ?? '')
+                    ? null
+                    : 'Введите корректный e-mail',
               ),
               const SizedBox(height: 16),
-              const TextField(
+              TextFormField(
+                controller: _password,
                 obscureText: true,
-                decoration: InputDecoration(labelText: 'Пароль'),
+                decoration: const InputDecoration(labelText: 'Пароль'),
+                validator: (v) =>
+                    (v?.length ?? 0) >= 6 ? null : 'Минимум 6 символов',
+                onFieldSubmitted: (_) => _submit(),
               ),
               const SizedBox(height: 24),
-              FilledButton(onPressed: onLogin, child: const Text('Войти')),
+              FilledButton(
+                onPressed: _submit,
+                child: Text(_register ? 'Зарегистрироваться' : 'Войти'),
+              ),
               TextButton(
-                onPressed: () {},
-                child: const Text('Создать аккаунт'),
+                onPressed: () => setState(() {
+                  _register = !_register;
+                  _form.currentState?.reset();
+                }),
+                child: Text(
+                  _register ? 'Уже есть аккаунт? Войти' : 'Создать аккаунт',
+                ),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
