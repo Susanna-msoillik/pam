@@ -1,3 +1,5 @@
+import 'car_route.dart';
+
 class Booking {
   final String id;
   final String routeId;
@@ -5,6 +7,7 @@ class Booking {
   final int seats;
   final String status;
   final DateTime createdAt;
+  final CarRoute? route;
 
   const Booking({
     required this.id,
@@ -13,5 +16,6 @@ class Booking {
     required this.seats,
     required this.status,
     required this.createdAt,
+    this.route,
   });
 }
