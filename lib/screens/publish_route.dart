@@ -4,6 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../widgets/route_info.dart';
 
+import 'package:provider/provider.dart';
+
+import '../data/app_user.dart';
+import '../data/car_route.dart';
+import '../data/result.dart';
+import '../models/routes_model.dart';
+import '../models/bookings_model.dart';
+
 class PublishRoutePage extends StatefulWidget {
   const PublishRoutePage({super.key});
   @override
@@ -18,6 +26,8 @@ class _PublishRoutePageState extends State<PublishRoutePage> {
   final _seats = TextEditingController(text: '3');
   final _price = TextEditingController();
   DateTime? _departure;
+  bool _saving = false;
+  String? _error;
   @override
   void dispose() {
     for (final c in [_from, _to, _date, _seats, _price]) {
@@ -44,8 +54,34 @@ class _PublishRoutePageState extends State<PublishRoutePage> {
     _date.text = dateLabel(_departure!);
   }
 
-  void _submit() {
-    if (!_form.currentState!.validate()) return;
+  Future<void> _submit() async {
+    if (_saving || !_form.currentState!.validate()) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    final user = context.read<AppUser>();
+    final result = await context.read<RoutesModel>().create(
+      CarRoute(
+        id: '',
+        driverId: user.id,
+        driverName: user.name,
+        fromCity: _from.text.trim(),
+        toCity: _to.text.trim(),
+        departureAt: _departure!,
+        seatsTotal: int.parse(_seats.text),
+        price: double.parse(_price.text.replaceAll(',', '.')),
+      ),
+    );
+    if (!mounted) return;
+    if (result is Err<CarRoute>) {
+      setState(() {
+        _saving = false;
+        _error = result.message;
+      });
+      return;
+    }
+    context.read<BookingsModel>().load();
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Поездка опубликована')));
     context.pop();
@@ -119,7 +155,15 @@ class _PublishRoutePageState extends State<PublishRoutePage> {
             },
           ),
           const SizedBox(height: 24),
-          FilledButton(onPressed: _submit, child: const Text('Опубликовать')),
+          if (_error != null)
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          FilledButton(
+            onPressed: _saving ? null : _submit,
+            child: const Text('Опубликовать'),
+          ),
         ],
       ),
     ),

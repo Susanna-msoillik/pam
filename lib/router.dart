@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'data/mock_data.dart';
+import 'package:provider/provider.dart';
+
+import 'data/app_user.dart';
+import 'data/route_repository.dart';
+import 'data/booking_repository.dart';
+import 'models/route_details_model.dart';
 import 'screens/auth.dart';
 import 'screens/booking_form.dart';
 import 'screens/home.dart';
@@ -32,7 +37,7 @@ final router = GoRouter(
             GoRoute(
               path: '/routes',
               builder: (context, _) => RouteSearchPage(
-                onOpen: (route) => context.push('/routes/${route.id}'),
+                onOpen: (r) => context.push('/routes/${r.id}'),
                 onPublish: () => context.push('/routes/new'),
               ),
               routes: [
@@ -42,37 +47,19 @@ final router = GoRouter(
                 ),
                 GoRoute(
                   path: ':id',
-                  builder: (context, state) {
-                    final route = mockRoutes
-                        .where(
-                          (route) => route.id == state.pathParameters['id'],
-                        )
-                        .firstOrNull;
-                    return route == null
-                        ? const Scaffold(
-                            body: Center(child: Text('Поездка не найдена')),
-                          )
-                        : RouteDetailsPage(
-                            route: route,
-                            onBook: () =>
-                                context.push('/routes/${route.id}/book'),
-                          );
-                  },
+                  builder: (context, state) => _trip(
+                    context,
+                    state.pathParameters['id']!,
+                    const RouteDetailsPage(),
+                  ),
                   routes: [
                     GoRoute(
                       path: 'book',
-                      builder: (_, state) {
-                        final route = mockRoutes
-                            .where(
-                              (route) => route.id == state.pathParameters['id'],
-                            )
-                            .firstOrNull;
-                        return route == null
-                            ? const Scaffold(
-                                body: Center(child: Text('Поездка не найдена')),
-                              )
-                            : BookingFormPage(route: route);
-                      },
+                      builder: (context, state) => _trip(
+                        context,
+                        state.pathParameters['id']!,
+                        const BookingFormPage(),
+                      ),
                     ),
                   ],
                 ),
@@ -84,9 +71,8 @@ final router = GoRouter(
           routes: [
             GoRoute(
               path: '/trips',
-              builder: (context, _) => MyTripsPage(
-                onOpen: (route) => context.push('/routes/${route.id}'),
-              ),
+              builder: (context, _) =>
+                  MyTripsPage(onOpen: (r) => context.push('/routes/${r.id}')),
             ),
           ],
         ),
@@ -99,3 +85,13 @@ final router = GoRouter(
     ),
   ],
 );
+Widget _trip(BuildContext context, String id, Widget child) =>
+    ChangeNotifierProvider(
+      create: (_) => RouteDetailsModel(
+        context.read<RouteRepository>(),
+        context.read<BookingRepository>(),
+        id,
+        context.read<AppUser>().id,
+      )..load(),
+      child: child,
+    );
