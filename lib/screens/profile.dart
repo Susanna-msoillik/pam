@@ -3,7 +3,12 @@ import 'package:go_router/go_router.dart';
 
 import '../widgets/confirmation.dart';
 
-import '../data/mock_data.dart';
+import 'package:provider/provider.dart';
+
+import '../data/app_user.dart';
+import '../data/mock_repository.dart';
+import '../models/routes_model.dart';
+import '../models/bookings_model.dart';
 
 class ProfilePage extends StatelessWidget {
   final VoidCallback? onLogout;
@@ -11,6 +16,7 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AppUser>();
     return Scaffold(
       appBar: AppBar(title: const Text('Профиль')),
       body: ListView(
@@ -24,12 +30,12 @@ class ProfilePage extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            currentUserName,
+            user.name,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
-          const Text('susanna@example.com', textAlign: TextAlign.center),
+          Text(user.email, textAlign: TextAlign.center),
           const SizedBox(height: 32),
           const ListTile(
             leading: Icon(Icons.school_outlined),
@@ -37,6 +43,18 @@ class ProfilePage extends StatelessWidget {
             subtitle: Text('Поездки вместе со студентами'),
           ),
           const SizedBox(height: 24),
+          StatefulBuilder(
+            builder: (context, update) => SwitchListTile(
+              title: const Text('Симулировать сбой сети'),
+              value: context.read<MockRepository>().simulateError,
+              onChanged: (value) {
+                context.read<MockRepository>().simulateError = value;
+                update(() {});
+                context.read<RoutesModel>().load();
+                context.read<BookingsModel>().load();
+              },
+            ),
+          ),
           OutlinedButton.icon(
             onPressed: () async {
               if (await confirmAction(context, 'Выйти из аккаунта?') &&
