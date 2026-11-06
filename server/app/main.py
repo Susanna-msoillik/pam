@@ -4,25 +4,44 @@
 #         python3 -m app.main
 # Env:    PORT (default 8080), JWT_SECRET (default dev-secret-change-me)
 
+import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import auth, files, notes  # importing app.db inside them creates app.db
-from .errors import ApiError, json_response
+from . import auth, files, notes
+from .db import Base, engine
+from .errors import ApiError, json_response, unauthorized, validation_error
 
-app = FastAPI(title="PAM Backend Template", docs_url=None, redoc_url=None)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        Base.metadata.create_all(engine)
+        files.UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+        yield
+    finally:
+        engine.dispose()
+
+
+app = FastAPI(
+    title="PAM Backend Template", docs_url=None, redoc_url=None, lifespan=lifespan
+)
 
 
 @app.get("/health")
-async def health():
+def health():
     return json_response({"status": "ok"})
 
 
-# The three feature modules. Register your own entity's router the same way.
+# Feature modules.
 app.include_router(auth.router)
 app.include_router(notes.router)
 app.include_router(files.router)
@@ -63,9 +82,17 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 @app.exception_handler(RequestValidationError)
 async def request_validation_handler(request: Request, exc: RequestValidationError):
     """Safety net: typed-parameter failures answer 400, never FastAPI's 422."""
+    if request.url.path == "/auth/login":
+        return unauthorized("Invalid email or password").to_response()
+    return validation_error("Invalid request").to_response()
+
+
+@app.exception_handler(SQLAlchemyError)
+async def database_error_handler(request: Request, exc: SQLAlchemyError):
+    logger.error("Database operation failed", exc_info=exc)
     return json_response(
-        {"error": {"code": "VALIDATION_ERROR", "message": "Invalid request"}},
-        status=400,
+        {"error": {"code": "INTERNAL_ERROR", "message": "Database operation failed"}},
+        status=500,
     )
 
 
