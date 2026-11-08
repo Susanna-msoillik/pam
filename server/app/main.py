@@ -14,9 +14,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import auth, files, notes
-from .db import Base, engine
+from . import auth, files, notes, routes, bookings
+from .db import Base, SessionLocal, engine
 from .errors import ApiError, json_response, unauthorized, validation_error
+from .seed import seed_routes
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,8 @@ async def lifespan(app: FastAPI):
     try:
         Base.metadata.create_all(engine)
         files.UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+        with SessionLocal() as db:
+            seed_routes(db)
         yield
     finally:
         engine.dispose()
@@ -45,6 +48,8 @@ def health():
 app.include_router(auth.router)
 app.include_router(notes.router)
 app.include_router(files.router)
+app.include_router(routes.router)
+app.include_router(bookings.router)
 
 # Permissive CORS so a Flutter *web* build can call the API during the labs.
 app.add_middleware(
