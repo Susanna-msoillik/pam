@@ -16,8 +16,14 @@ import 'screens/publish_route.dart';
 import 'screens/route_details.dart';
 import 'screens/route_search.dart';
 
-final router = GoRouter(
-  initialLocation: '/login',
+GoRouter createRouter({
+  required String initialLocation,
+  Listenable? refreshListenable,
+  GoRouterRedirect? redirect,
+}) => GoRouter(
+  initialLocation: initialLocation,
+  refreshListenable: refreshListenable,
+  redirect: redirect,
   errorBuilder: (context, state) => Scaffold(
     appBar: AppBar(title: const Text('Страница не найдена')),
     body: Center(

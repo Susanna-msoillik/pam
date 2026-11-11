@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../models/auth_model.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -21,8 +24,14 @@ class _AuthPageState extends State<AuthPage> {
     super.dispose();
   }
 
-  void _submit() {
-    if (_form.currentState!.validate()) context.go('/routes');
+  Future<void> _submit() async {
+    if (!_form.currentState!.validate()) return;
+    final success = await context.read<AuthModel>().signIn(
+      _email.text.trim(),
+      _password.text,
+      name: _register ? _name.text.trim() : null,
+    );
+    if (mounted && success) context.go('/routes');
   }
 
   @override
@@ -79,14 +88,16 @@ class _AuthPageState extends State<AuthPage> {
               ),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: _submit,
+                onPressed: context.watch<AuthModel>().loading ? null : _submit,
                 child: Text(_register ? 'Зарегистрироваться' : 'Войти'),
               ),
               TextButton(
-                onPressed: () => setState(() {
-                  _register = !_register;
-                  _form.currentState?.reset();
-                }),
+                onPressed: context.watch<AuthModel>().loading
+                    ? null
+                    : () => setState(() {
+                        _register = !_register;
+                        _form.currentState?.reset();
+                      }),
                 child: Text(
                   _register ? 'Уже есть аккаунт? Войти' : 'Создать аккаунт',
                 ),

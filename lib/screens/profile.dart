@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../widgets/confirmation.dart';
 
 import 'package:provider/provider.dart';
 
 import '../data/app_user.dart';
-import '../data/mock_repository.dart';
-import '../models/routes_model.dart';
-import '../models/bookings_model.dart';
+import '../models/auth_model.dart';
 
 class ProfilePage extends StatelessWidget {
   final VoidCallback? onLogout;
@@ -43,23 +40,11 @@ class ProfilePage extends StatelessWidget {
             subtitle: Text('Поездки вместе со студентами'),
           ),
           const SizedBox(height: 24),
-          StatefulBuilder(
-            builder: (context, update) => SwitchListTile(
-              title: const Text('Симулировать сбой сети'),
-              value: context.read<MockRepository>().simulateError,
-              onChanged: (value) {
-                context.read<MockRepository>().simulateError = value;
-                update(() {});
-                context.read<RoutesModel>().load();
-                context.read<BookingsModel>().load();
-              },
-            ),
-          ),
           OutlinedButton.icon(
             onPressed: () async {
               if (await confirmAction(context, 'Выйти из аккаунта?') &&
                   context.mounted) {
-                context.go('/login');
+                await context.read<AuthModel>().logout();
               }
             },
             icon: const Icon(Icons.logout),
