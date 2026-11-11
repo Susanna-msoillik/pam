@@ -18,4 +18,16 @@ class Booking {
     required this.createdAt,
     this.route,
   });
+
+  factory Booking.fromJson(Map<String, dynamic> data) => Booking(
+    id: (data['id'] as int).toString(),
+    routeId: (data['routeId'] as int).toString(),
+    passengerId: (data['passengerId'] as int).toString(),
+    seats: data['seats'] as int,
+    status: data['status'] as String,
+    createdAt: DateTime.parse(data['createdAt'] as String).toLocal(),
+    route: data['route'] == null
+        ? null
+        : CarRoute.fromJson(data['route'] as Map<String, dynamic>),
+  );
 }
