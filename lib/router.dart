@@ -60,6 +60,14 @@ GoRouter createRouter({
                   ),
                   routes: [
                     GoRoute(
+                      path: 'edit',
+                      builder: (context, state) => _trip(
+                        context,
+                        state.pathParameters['id']!,
+                        const RouteEditPage(),
+                      ),
+                    ),
+                    GoRoute(
                       path: 'book',
                       builder: (context, state) => _trip(
                         context,

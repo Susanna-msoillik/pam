@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../widgets/route_info.dart';
+import '../models/route_details_model.dart';
+import '../widgets/load_state.dart';
 
 import 'package:provider/provider.dart';
 
@@ -13,7 +15,8 @@ import '../models/routes_model.dart';
 import '../models/bookings_model.dart';
 
 class PublishRoutePage extends StatefulWidget {
-  const PublishRoutePage({super.key});
+  final CarRoute? initial;
+  const PublishRoutePage({super.key, this.initial});
   @override
   State<PublishRoutePage> createState() => _PublishRoutePageState();
 }
@@ -28,6 +31,20 @@ class _PublishRoutePageState extends State<PublishRoutePage> {
   DateTime? _departure;
   bool _saving = false;
   String? _error;
+  @override
+  void initState() {
+    super.initState();
+    final route = widget.initial;
+    if (route != null) {
+      _from.text = route.fromCity;
+      _to.text = route.toCity;
+      _departure = route.departureAt;
+      _date.text = dateLabel(route.departureAt);
+      _seats.text = '${route.seatsTotal}';
+      _price.text = '${route.price}';
+    }
+  }
+
   @override
   void dispose() {
     for (final c in [_from, _to, _date, _seats, _price]) {
@@ -61,18 +78,20 @@ class _PublishRoutePageState extends State<PublishRoutePage> {
       _error = null;
     });
     final user = context.read<AppUser>();
-    final result = await context.read<RoutesModel>().create(
-      CarRoute(
-        id: '',
-        driverId: user.id,
-        driverName: user.name,
-        fromCity: _from.text.trim(),
-        toCity: _to.text.trim(),
-        departureAt: _departure!,
-        seatsTotal: int.parse(_seats.text),
-        price: double.parse(_price.text.replaceAll(',', '.')),
-      ),
+    final route = CarRoute(
+      id: widget.initial?.id ?? '',
+      driverId: user.id,
+      driverName: user.name,
+      fromCity: _from.text.trim(),
+      toCity: _to.text.trim(),
+      departureAt: _departure!,
+      seatsTotal: int.parse(_seats.text),
+      price: double.parse(_price.text.replaceAll(',', '.')),
     );
+    final model = context.read<RoutesModel>();
+    final result = widget.initial == null
+        ? await model.create(route)
+        : await model.update(route);
     if (!mounted) return;
     if (result is Err<CarRoute>) {
       setState(() {
@@ -82,14 +101,25 @@ class _PublishRoutePageState extends State<PublishRoutePage> {
       return;
     }
     context.read<BookingsModel>().load();
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Поездка опубликована')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          widget.initial == null
+              ? 'Поездка опубликована'
+              : 'Изменения сохранены',
+        ),
+      ),
+    );
     context.pop();
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Предложить поездку')),
+    appBar: AppBar(
+      title: Text(
+        widget.initial == null ? 'Предложить поездку' : 'Изменить поездку',
+      ),
+    ),
     body: Form(
       key: _form,
       child: ListView(
@@ -162,10 +192,34 @@ class _PublishRoutePageState extends State<PublishRoutePage> {
             ),
           FilledButton(
             onPressed: _saving ? null : _submit,
-            child: const Text('Опубликовать'),
+            child: Text(widget.initial == null ? 'Опубликовать' : 'Сохранить'),
           ),
         ],
       ),
     ),
   );
+}
+
+class RouteEditPage extends StatelessWidget {
+  const RouteEditPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final model = context.watch<RouteDetailsModel>();
+    if (!model.loading &&
+        model.error == null &&
+        model.route != null &&
+        model.isDriver &&
+        model.freeSeats == model.route!.seatsTotal) {
+      return PublishRoutePage(initial: model.route!);
+    }
+    return Scaffold(
+      appBar: AppBar(title: const Text('Изменить поездку')),
+      body: LoadState(
+        loading: model.loading,
+        error: model.error,
+        onRetry: model.load,
+        child: const Center(child: Text('Изменение поездки недоступно')),
+      ),
+    );
+  }
 }
