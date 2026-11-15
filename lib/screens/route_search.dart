@@ -40,88 +40,105 @@ class _RouteSearchPageState extends State<RouteSearchPage> {
         loading: model.loading,
         error: model.error,
         onRetry: model.load,
-        child: ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: model.routes.length + 1,
-          itemBuilder: (context, index) {
-            if (index > 0) {
-              return RouteCard(
-                route: model.routes[index - 1],
-                onTap: () => widget.onOpen?.call(model.routes[index - 1]),
-              );
-            }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  controller: _from,
-                  textInputAction: TextInputAction.search,
-                  onSubmitted: (_) => _search(),
-                  decoration: const InputDecoration(
-                    labelText: 'Откуда',
-                    prefixIcon: Icon(Icons.trip_origin),
+        child: RefreshIndicator(
+          onRefresh: model.load,
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: model.routes.length + 1 + (model.hasMore ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index == model.routes.length + 1) {
+                if (model.moreError != null) {
+                  return TextButton(
+                    onPressed: model.loadMore,
+                    child: Text('${model.moreError} · Повторить'),
+                  );
+                }
+                model.loadMore();
+                return const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (index > 0) {
+                return RouteCard(
+                  route: model.routes[index - 1],
+                  onTap: () => widget.onOpen?.call(model.routes[index - 1]),
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: _from,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => _search(),
+                    decoration: const InputDecoration(
+                      labelText: 'Откуда',
+                      prefixIcon: Icon(Icons.trip_origin),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _to,
-                  textInputAction: TextInputAction.search,
-                  onSubmitted: (_) => _search(),
-                  decoration: const InputDecoration(
-                    labelText: 'Куда',
-                    prefixIcon: Icon(Icons.location_on_outlined),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _to,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => _search(),
+                    decoration: const InputDecoration(
+                      labelText: 'Куда',
+                      prefixIcon: Icon(Icons.location_on_outlined),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final now = DateTime.now();
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _date ?? now,
-                      firstDate: DateTime(now.year, now.month, now.day),
-                      lastDate: now.add(const Duration(days: 365)),
-                    );
-                    if (date != null && mounted) setState(() => _date = date);
-                  },
-                  icon: const Icon(Icons.calendar_today),
-                  label: Text(
-                    _date == null
-                        ? 'Дата поездки'
-                        : '${_date!.day}.${_date!.month}.${_date!.year}',
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final now = DateTime.now();
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: _date ?? now,
+                        firstDate: DateTime(now.year, now.month, now.day),
+                        lastDate: now.add(const Duration(days: 365)),
+                      );
+                      if (date != null && mounted) setState(() => _date = date);
+                    },
+                    icon: const Icon(Icons.calendar_today),
+                    label: Text(
+                      _date == null
+                          ? 'Дата поездки'
+                          : '${_date!.day}.${_date!.month}.${_date!.year}',
+                    ),
                   ),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _search,
-                        icon: const Icon(Icons.search),
-                        label: const Text('Найти'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _search,
+                          icon: const Icon(Icons.search),
+                          label: const Text('Найти'),
+                        ),
                       ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        _from.clear();
-                        _to.clear();
-                        setState(() => _date = null);
-                        _search();
-                      },
-                      child: const Text('Сбросить'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  model.routes.isEmpty
-                      ? 'Поездки не найдены'
-                      : 'Ближайшие поездки',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-              ],
-            );
-          },
+                      TextButton(
+                        onPressed: () {
+                          _from.clear();
+                          _to.clear();
+                          setState(() => _date = null);
+                          _search();
+                        },
+                        child: const Text('Сбросить'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    model.routes.isEmpty
+                        ? 'Поездки не найдены'
+                        : 'Ближайшие поездки',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              );
+            },
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(

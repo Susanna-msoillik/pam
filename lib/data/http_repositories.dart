@@ -30,7 +30,7 @@ class HttpRouteRepository implements RouteRepository {
       if (date != null)
         'date':
             '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
-      if (driverId != null) 'driverId': driverId,
+      'driverId': ?driverId,
     },
   );
   @override

@@ -83,7 +83,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
                     RouteInfo(
                       icon: Icons.payments_outlined,
                       label: 'За одно место',
-                      value: '${route.price.toStringAsFixed(0)} MDL',
+                      value: '${route.price.toStringAsFixed(2)} MDL',
                     ),
                     const SizedBox(height: 16),
                     TextFormField(

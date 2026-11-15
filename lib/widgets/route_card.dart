@@ -34,7 +34,7 @@ class RouteCard extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(child: Text(route.driverName)),
                   Text(
-                    '${route.price.toStringAsFixed(0)} MDL',
+                    '${route.price.toStringAsFixed(2)} MDL',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ],

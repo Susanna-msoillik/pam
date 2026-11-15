@@ -47,11 +47,7 @@ class AuthModel extends ChangeNotifier {
         AppUser.fromJson(data['user'] as Map<String, dynamic>),
       ),
       authenticated: false,
-      body: {
-        'email': email,
-        'password': password,
-        if (name != null) 'name': name,
-      },
+      body: {'email': email, 'password': password, 'name': ?name},
     );
     if (generation != _generation) return false;
     switch (result) {

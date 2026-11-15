@@ -19,6 +19,13 @@ class BookingsModel extends ChangeNotifier {
   bool saving = false;
   String? error;
   int _request = 0;
+  int _bookingPage = 1;
+  int _driverPage = 1;
+  bool _moreBookings = false;
+  bool _morePublished = false;
+  bool get hasMore => _moreBookings || _morePublished;
+  bool loadingMore = false;
+  String? moreError;
 
   bool _disposed = false;
   @override
@@ -30,6 +37,8 @@ class BookingsModel extends ChangeNotifier {
   Future<void> load() async {
     final request = ++_request;
     if (_disposed) return;
+    loadingMore = false;
+    moreError = null;
     loading = true;
     error = null;
     notifyListeners();
@@ -39,12 +48,16 @@ class BookingsModel extends ChangeNotifier {
     switch (booked) {
       case Ok(value: final value):
         _bookings = value;
+        _bookingPage = 1;
+        _moreBookings = value.length == 20;
       case Err(message: final message):
         error = message;
     }
     switch (published) {
       case Ok(value: final value):
         _published = value;
+        _driverPage = 1;
+        _morePublished = value.length == 20;
       case Err(message: final message):
         error ??= message;
     }
@@ -72,5 +85,47 @@ class BookingsModel extends ChangeNotifier {
     saving = false;
     if (hasListeners) notifyListeners();
     return result;
+  }
+
+  Future<void> loadMore() async {
+    if (_disposed || loading || loadingMore || !hasMore) return;
+    final request = _request;
+    loadingMore = true;
+    moreError = null;
+    if (_moreBookings) {
+      final result = await repository.fetchBookings(page: _bookingPage + 1);
+      if (_disposed || request != _request) return;
+      switch (result) {
+        case Ok(value: final value):
+          _bookings = [
+            ..._bookings,
+            ...value.where((b) => !_bookings.any((old) => old.id == b.id)),
+          ];
+          _bookingPage++;
+          _moreBookings = value.length == 20;
+        case Err(message: final message):
+          moreError = message;
+      }
+    }
+    if (_morePublished) {
+      final result = await routes.fetchRoutes(
+        driverId: userId,
+        page: _driverPage + 1,
+      );
+      if (_disposed || request != _request) return;
+      switch (result) {
+        case Ok(value: final value):
+          _published = [
+            ..._published,
+            ...value.where((r) => !_published.any((old) => old.id == r.id)),
+          ];
+          _driverPage++;
+          _morePublished = value.length == 20;
+        case Err(message: final message):
+          moreError ??= message;
+      }
+    }
+    loadingMore = false;
+    if (hasListeners) notifyListeners();
   }
 }

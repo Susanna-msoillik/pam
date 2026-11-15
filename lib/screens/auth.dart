@@ -87,6 +87,16 @@ class _AuthPageState extends State<AuthPage> {
                 onFieldSubmitted: (_) => _submit(),
               ),
               const SizedBox(height: 24),
+              if (context.watch<AuthModel>().error != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    context.watch<AuthModel>().error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
               FilledButton(
                 onPressed: context.watch<AuthModel>().loading ? null : _submit,
                 child: Text(_register ? 'Зарегистрироваться' : 'Войти'),
