@@ -50,21 +50,25 @@ class CarPoolRoot extends StatefulWidget {
 }
 
 class _CarPoolRootState extends State<CarPoolRoot> {
-  late final GoRouter _router;
+  late GoRouter _router;
+  String? _routerUserId;
   @override
   void initState() {
     super.initState();
     final auth = context.read<AuthModel>();
-    _router = createRouter(
-      initialLocation: auth.authenticated ? '/routes' : '/login',
-      refreshListenable: auth,
-      redirect: (_, state) {
-        if (!auth.authenticated && state.uri.path != '/login') return '/login';
-        if (auth.user != null && state.uri.path == '/login') return '/routes';
-        return null;
-      },
-    );
+    _routerUserId = auth.user?.id;
+    _router = _createRouter(auth);
   }
+
+  GoRouter _createRouter(AuthModel auth) => createRouter(
+    initialLocation: auth.user != null || auth.authenticated ? '/routes' : '/login',
+    refreshListenable: auth,
+    redirect: (_, state) {
+      if (!auth.authenticated && state.uri.path != '/login') return '/login';
+      if (auth.user != null && state.uri.path == '/login') return '/routes';
+      return null;
+    },
+  );
 
   @override
   void dispose() {
@@ -76,6 +80,12 @@ class _CarPoolRootState extends State<CarPoolRoot> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthModel>();
+    if (_routerUserId != auth.user?.id) {
+      final previous = _router;
+      _routerUserId = auth.user?.id;
+      _router = _createRouter(auth);
+      WidgetsBinding.instance.addPostFrameCallback((_) => previous.dispose());
+    }
     if (auth.authenticated && auth.user == null) {
       return MaterialApp(
         theme: appTheme(),
